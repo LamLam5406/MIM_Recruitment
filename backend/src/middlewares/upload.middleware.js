@@ -1,36 +1,47 @@
 const multer = require('multer');
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
-const cloudinary = require('cloudinary').v2;
+const path = require('path');
+const fs = require('fs');
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-});
+// Đường dẫn tới thư mục lưu trữ: public/uploads
+const uploadPath = path.join(process.cwd(), 'uploads');
 
-const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: async (req, file) => {
-    // Trích xuất đuôi file để phân loại
-    const ext = file.originalname.split('.').pop().toLowerCase();
-    
-    // 1. Nếu là file Word (Bắt buộc phải tải về)
-    if (['doc', 'docx'].includes(ext)) {
-      return {
-        folder: 'uniconnect_uploads',
-        resource_type: 'raw', 
-        format: ext
-      };
-    }
-    
-    // 2. Nếu là PDF hoặc Ảnh (Cho phép xem trực tiếp trên trình duyệt)
-    return {
-      folder: 'uniconnect_uploads',
-      resource_type: 'auto', // Auto sẽ tự nhận diện PDF như một hình ảnh
-      allowed_formats: ['jpg', 'png', 'jpeg', 'pdf'] 
-    };
+// Tự động tạo thư mục nếu chưa tồn tại trên server
+if (!fs.existsSync(uploadPath)) {
+  fs.mkdirSync(uploadPath, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadPath);
   },
+  filename: function (req, file, cb) {
+    // Trích xuất đuôi file gốc (vd: .pdf, .docx, .png)
+    const ext = path.extname(file.originalname).toLowerCase();
+    
+    // Đổi tên file để tránh trùng lặp
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + ext);
+  }
 });
 
-const upload = multer({ storage: storage });
+// Kiểm tra định dạng file an toàn
+const fileFilter = (req, file, cb) => {
+  const ext = path.extname(file.originalname).toLowerCase();
+  const allowedExtensions = ['.doc', '.docx', '.jpg', '.png', '.jpeg', '.pdf'];
+
+  if (allowedExtensions.includes(ext)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Định dạng file không được hỗ trợ. Chỉ nhận doc, docx, jpg, png, jpeg, pdf'), false);
+  }
+};
+
+const upload = multer({ 
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // Giới hạn 5MB
+  }
+});
+
 module.exports = upload;

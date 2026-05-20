@@ -37,11 +37,12 @@ const authController = {
 
       // Xử lý file upload lên Cloudinary
       if (req.file) {
+	const fileUrl = '/uploads/' + req.file.filename;
         if (role === 'student') {
-          data.cv_url = req.file.path; // Lấy thẳng URL từ Cloudinary
+          data.cv_url = fileUrl;
         } 
         if (role === 'company') {
-          data.logo_url = req.file.path;
+          data.logo_url = fileUrl;
         }
       }
 

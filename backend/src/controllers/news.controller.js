@@ -35,7 +35,7 @@ const newsController = {
       const data = { title, content, author };
 
       if (req.file) {
-        data.cover_image = req.file.path; // Không cần xóa ảnh cũ local nữa
+        data.cover_image = '/uploads/' + req.file.filename;
       }
 
       const news = await newsService.createNews(data);
@@ -57,7 +57,7 @@ const newsController = {
       const data = { title, content, author };
 
       if (req.file) {
-        data.cover_image = req.file.path; // Không cần xóa ảnh cũ local nữa
+        data.cover_image = '/uploads/' + req.file.filename;
       }
 
       // Lọc bỏ các trường undefined
