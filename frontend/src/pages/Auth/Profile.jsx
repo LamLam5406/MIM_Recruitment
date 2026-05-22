@@ -13,6 +13,11 @@ const Profile = () => {
     company_name: '', website: '', address: '', size: '', industry: '', description: '', logo_url: ''
   });
 
+  // States cho đổi mật khẩu
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [passwords, setPasswords] = useState({ old: '', new: '', confirm: '' });
+  const [isChangingPass, setIsChangingPass] = useState(false);
+
   // State lưu trữ lịch sử ứng tuyển
   const [appliedJobs, setAppliedJobs] = useState([]);
 
@@ -39,6 +44,28 @@ const Profile = () => {
       }
     } catch (error) {
       toast.error('Không thể tải thông tin hồ sơ!');
+    }
+  };
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    if (passwords.new !== passwords.confirm) {
+      return toast.error('Mật khẩu xác nhận không khớp!');
+    }
+    if (passwords.new.length < 6) {
+      return toast.error('Mật khẩu mới phải có ít nhất 6 ký tự!');
+    }
+
+    setIsChangingPass(true);
+    try {
+      const res = await authApi.changePassword(passwords.old, passwords.new);
+      toast.success(res.message || 'Đổi mật khẩu thành công!');
+      setIsPasswordModalOpen(false);
+      setPasswords({ old: '', new: '', confirm: '' }); // Xóa trắng form
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Lỗi khi đổi mật khẩu');
+    } finally {
+      setIsChangingPass(false);
     }
   };
 
@@ -165,9 +192,14 @@ const Profile = () => {
           <div className="flex-1 space-y-6">
             <div className="bg-white px-6 py-4 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center">
               <h2 className="text-lg font-bold text-slate-800">Chi tiết Hồ sơ</h2>
-              <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-sm font-bold rounded-lg hover:bg-[#007db3] transition-colors shadow-sm">
-                Chỉnh sửa
-              </button>
+              <div className="flex gap-2">
+                <button onClick={() => setIsPasswordModalOpen(true)} className="px-4 py-2 bg-slate-100 text-slate-700 text-sm font-bold rounded-lg hover:bg-slate-200 transition-colors">
+                  Đổi mật khẩu
+                </button>
+                <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-sm font-bold rounded-lg hover:bg-[#007db3] transition-colors shadow-sm">
+                  Chỉnh sửa
+                </button>
+              </div>
             </div>
 
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
@@ -316,6 +348,70 @@ const Profile = () => {
             </div>
           </div>
         </form>
+      )}
+
+      {/* --- MODAL ĐỔI MẬT KHẨU --- */}
+      {isPasswordModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white w-full max-w-md rounded-3xl p-8 shadow-2xl flex flex-col">
+            <div className="flex justify-between items-start mb-6 border-b border-slate-100 pb-4">
+              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Đổi Mật Khẩu</h3>
+              <button onClick={() => { setIsPasswordModalOpen(false); setPasswords({ old: '', new: '', confirm: '' }); }} className="p-2 text-slate-400 hover:text-slate-800 transition-colors bg-slate-50 hover:bg-slate-100 rounded-full">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </button>
+            </div>
+
+            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-widest">Mật khẩu hiện tại</label>
+                <input
+                  type="password"
+                  required
+                  value={passwords.old}
+                  onChange={(e) => setPasswords({...passwords, old: e.target.value})}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:border-[#007db3] focus:ring-2 focus:ring-blue-100 outline-none transition-all text-sm font-medium"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-widest">Mật khẩu mới</label>
+                <input
+                  type="password"
+                  required
+                  value={passwords.new}
+                  onChange={(e) => setPasswords({...passwords, new: e.target.value})}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:border-[#007db3] focus:ring-2 focus:ring-blue-100 outline-none transition-all text-sm font-medium"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-widest">Xác nhận mật khẩu mới</label>
+                <input
+                  type="password"
+                  required
+                  value={passwords.confirm}
+                  onChange={(e) => setPasswords({...passwords, confirm: e.target.value})}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:border-[#007db3] focus:ring-2 focus:ring-blue-100 outline-none transition-all text-sm font-medium"
+                />
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-slate-100 flex gap-3 justify-end">
+                <button 
+                  type="button"
+                  onClick={() => { setIsPasswordModalOpen(false); setPasswords({ old: '', new: '', confirm: '' }); }}
+                  className="px-6 py-3 rounded-xl font-bold text-[11px] uppercase tracking-widest transition-all bg-slate-100 text-slate-600 hover:bg-slate-200"
+                >
+                  HỦY BỎ
+                </button>
+                <button 
+                  type="submit"
+                  disabled={isChangingPass}
+                  className="px-8 py-3 rounded-xl font-bold text-[11px] uppercase tracking-widest transition-all bg-[#007db3] text-white hover:bg-blue-800 disabled:opacity-70 flex items-center gap-2 shadow-md"
+                >
+                  {isChangingPass ? 'ĐANG XỬ LÝ...' : 'XÁC NHẬN'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

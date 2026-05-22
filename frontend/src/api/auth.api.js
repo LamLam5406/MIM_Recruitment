@@ -18,5 +18,10 @@ export const authApi = {
         'Content-Type': 'multipart/form-data',
       },
     });
+  },
+
+  // 4. Đổi mật khẩu
+  changePassword: (oldPassword, newPassword) => {
+    return axiosClient.put('/auth/change-password', { oldPassword, newPassword });
   }
 };

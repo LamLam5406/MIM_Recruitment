@@ -9,19 +9,25 @@ const JobDetail = () => {
   const [job, setJob] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isApplying, setIsApplying] = useState(false);
-  const [hasApplied, setHasApplied] = useState(() => {
-    const saved = localStorage.getItem('uniconnect_applied_jobs');
-    if (saved) {
-      const jobs = JSON.parse(saved);
-      // id từ URL là chuỗi, nên cần check cả dạng chuỗi và số
-      return jobs.includes(id) || jobs.includes(Number(id)) || jobs.includes(String(id));
-    }
-    return false;
-  });
+  const [hasApplied, setHasApplied] = useState(false);
 
   useEffect(() => {
     fetchJobDetail();
+    checkIfApplied();
   }, [id]);
+
+  const checkIfApplied = async () => {
+    try {
+      const apps = await jobApi.getAppliedJobs();
+      // Ép kiểu về String để so sánh an toàn với params id từ URL
+      const appliedIds = apps.map(app => String(app.jobId || app.job_id || app.job?.id));
+      if (appliedIds.includes(String(id))) {
+        setHasApplied(true);
+      }
+    } catch (error) {
+      console.error("Lỗi kiểm tra trạng thái ứng tuyển", error);
+    }
+  };
 
   const fetchJobDetail = async () => {
     try {
@@ -42,17 +48,12 @@ const JobDetail = () => {
       toast.success(response.message || 'Nộp đơn thành công!');
       
       setHasApplied(true);
-      // Lưu vào LocalStorage
-      const saved = JSON.parse(localStorage.getItem('uniconnect_applied_jobs') || '[]');
-      localStorage.setItem('uniconnect_applied_jobs', JSON.stringify([...saved, id]));
 
     } catch (error) {
       const errorMsg = error.response?.data?.error || 'Có lỗi xảy ra khi nộp đơn!';
       
       if (errorMsg.toLowerCase().includes('đã nộp') || errorMsg.toLowerCase().includes('rồi')) {
         setHasApplied(true);
-        const saved = JSON.parse(localStorage.getItem('uniconnect_applied_jobs') || '[]');
-        localStorage.setItem('uniconnect_applied_jobs', JSON.stringify([...saved, id]));
         toast.success('Hệ thống ghi nhận bạn đã ứng tuyển công việc này từ trước!');
       } else {
         toast.error(errorMsg);

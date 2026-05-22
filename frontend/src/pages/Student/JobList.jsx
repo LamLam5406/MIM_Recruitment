@@ -8,10 +8,7 @@ const JobList = () => {
   const [loading, setLoading] = useState(true);
   const [applyingId, setApplyingId] = useState(null);
   
-  const [appliedJobs, setAppliedJobs] = useState(() => {
-    const saved = localStorage.getItem('uniconnect_applied_jobs');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [appliedJobs, setAppliedJobs] = useState([]);
 
   // States cho Tìm kiếm, Bộ lọc & Sắp xếp
   const [searchTerm, setSearchTerm] = useState('');
@@ -32,7 +29,19 @@ const JobList = () => {
 
   useEffect(() => {
     fetchJobs(currentPage);
+    fetchAppliedJobs();
   }, [currentPage, sortBy]);
+
+  const fetchAppliedJobs = async () => {
+    try {
+      const apps = await jobApi.getAppliedJobs();
+      // Trích xuất ID của các công việc đã nộp (tùy cấu trúc DB, có thể là app.jobId hoặc app.job.id)
+      const appliedIds = apps.map(app => app.jobId || app.job_id || app.job?.id);
+      setAppliedJobs(appliedIds);
+    } catch (error) {
+      console.error("Không thể tải danh sách đã ứng tuyển", error);
+    }
+  };
 
   const fetchJobs = async (page, overrides = {}) => {
     setLoading(true);
@@ -65,22 +74,13 @@ const JobList = () => {
       const response = await jobApi.applyJob(jobId);
       toast.success(response.message || 'Nộp đơn thành công!');
       
-      // Lưu vào state và LocalStorage
-      setAppliedJobs(prev => {
-        const newList = [...prev, jobId];
-        localStorage.setItem('uniconnect_applied_jobs', JSON.stringify(newList));
-        return newList;
-      }); 
+      setAppliedJobs(prev => [...prev, jobId]);
     } catch (error) {
       const errorMsg = error.response?.data?.error || 'Có lỗi xảy ra khi nộp đơn!';
       
       // Bắt lỗi trùng lặp từ Backend để tự động cập nhật UI
       if (errorMsg.toLowerCase().includes('đã nộp') || errorMsg.toLowerCase().includes('rồi')) {
-        setAppliedJobs(prev => {
-          const newList = [...prev, jobId];
-          localStorage.setItem('uniconnect_applied_jobs', JSON.stringify(newList));
-          return newList;
-        });
+        setAppliedJobs(prev => [...prev, jobId]);
         toast.success('Hệ thống ghi nhận bạn đã ứng tuyển job này từ trước!');
       } else {
         toast.error(errorMsg);
