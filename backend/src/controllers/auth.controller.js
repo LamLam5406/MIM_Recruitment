@@ -53,6 +53,22 @@ const authController = {
     } catch (e) {
       res.status(500).json({ error: e.message });
     }
+  },
+
+  changePassword: async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const { oldPassword, newPassword } = req.body;
+
+      if (!oldPassword || !newPassword) {
+        return res.status(400).json({ error: "Vui lòng nhập đầy đủ mật khẩu cũ và mới" });
+      }
+
+      const result = await authService.changePassword(userId, oldPassword, newPassword);
+      res.json(result);
+    } catch (e) {
+      res.status(400).json({ error: e.message });
+    }
   }
 };
 

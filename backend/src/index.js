@@ -7,6 +7,7 @@ const authRoute = require('./routes/auth.route');
 const jobRoute = require('./routes/job.route');
 const adminRoute = require('./routes/admin.route');
 const newsRoute = require('./routes/news.route');
+const interviewRoutes = require('./routes/interview.routes');
 const db = require('./models');
 const PORT = process.env.PORT;
 
@@ -29,6 +30,7 @@ app.use('/api/auth', authRoute);
 app.use('/api/jobs', jobRoute);
 app.use('/api/admin', adminRoute);
 app.use('/api/news', newsRoute);
+app.use('/api/interviews', interviewRoutes);
 
 app.listen(PORT, () => {
   console.log("Server running at http://localhost:" + PORT);

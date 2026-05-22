@@ -54,6 +54,23 @@ const authService = {
     }
     
     return { message: "Cập nhật hồ sơ thành công!" };
+  },
+
+  changePassword: async (userId, oldPassword, newPassword) => {
+    const user = await db.User.findByPk(userId);
+    if (!user) throw new Error("Người dùng không tồn tại");
+
+    // Kiểm tra mật khẩu cũ
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) throw new Error("Mật khẩu hiện tại không chính xác");
+
+    // Mã hóa mật khẩu mới
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+    
+    // Cập nhật vào DB
+    await user.update({ password: hashedNewPassword });
+
+    return { message: "Đổi mật khẩu thành công!" };
   }
 };
 
