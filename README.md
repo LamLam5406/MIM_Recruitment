@@ -221,5 +221,5 @@ Mỗi khi CLB có nhu cầu chỉnh sửa giao diện hoặc tính năng, thực
 ## 7. LINK WEBSITE + TÀI KHOẢN TEST
 
 * **Website:** http://118.70.176.240:8082/
-* **Email:** admin@test.com
+* **Email:** student1@test.com
 * **Mật khẩu:** 123456
